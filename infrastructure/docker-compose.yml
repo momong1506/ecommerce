@@ -108,9 +108,9 @@ services:
         - QUEUE_CONNECTION=database
       command: php artisan queue:work --tries=3 --backoff=0,180,420
 
-  networks:
-    ecommerce-network:
-      driver: bridge
+networks:
+  ecommerce-network:
+    driver: bridge
 
-  volumes:
-    db-data:
+volumes:
+  db-data:
