@@ -1,0 +1,98 @@
+version: '3.8'
+
+services:
+  # Laravel Backend
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: ecommerce-backend
+    restart: unless-stopped
+    working_dir: /var/www/backend
+    volumes:
+      - ../backend:/var/www/backend
+    networks:
+      - ecommerce-network
+    depends_on:
+      - db
+      - mailhog
+    environment:
+      - DB_CONNECTION=mysql
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=ecommerce_db
+      - DB_USERNAME=ecommerce_user
+      - DB_PASSWORD=ecommerce_password
+      - MAIL_MAILER=smtp
+      - MAIL_HOST=mailhog
+      - MAIL_PORT=1025
+      - MAIL_USERNAME=null
+      - MAIL_PASSWORD=null
+      - MAIL_ENCRYPTION=null
+
+  # Nginx for Backend
+  backend-nginx:
+    image: nginx:alpine
+    container_name: ecommerce-backend-nginx
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - ../backend:/var/www/backend
+      - ./nginx/backend.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - ecommerce-network
+    depends_on:
+      - backend
+
+  # MySQL Database (single database for all tables)
+  db:
+    image: mysql:8.0
+    container_name: ecommerce-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ecommerce_db
+      MYSQL_USER: ecommerce_user
+      MYSQL_PASSWORD: ecommerce_password
+      MYSQL_ROOT_PASSWORD: root_password
+    volumes:
+      - db-data:/var/lib/mysql
+    networks:
+      - ecommerce-network
+    ports:
+      - "3306:3306"
+
+  # Vue.js Frontend
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: ecommerce-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules
+    networks:
+      - ecommerce-network
+    environment:
+      - VITE_API_URL=http://localhost:8000/api/v1
+
+  # MailHog (FREE email testing)
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: ecommerce-mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    networks:
+      - ecommerce-network
+
+networks:
+  ecommerce-network:
+    driver: bridge
+
+volumes:
+  db-data:

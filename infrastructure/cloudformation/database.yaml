@@ -1,0 +1,98 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'RDS MySQL Database for E-Commerce Platform (100% FREE TIER - db.t2.micro)'
+
+Parameters:
+  EnvironmentName:
+    Description: Environment name prefix
+    Type: String
+    Default: ecommerce
+
+  DBName:
+    Description: Database name
+    Type: String
+    Default: ecommerce_db
+    MinLength: 1
+    MaxLength: 64
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9_]*'
+
+  DBUsername:
+    Description: Database master username
+    Type: String
+    Default: ecommerceuser
+    MinLength: 1
+    MaxLength: 16
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9_]*'
+
+  DBPassword:
+    Description: Database master password
+    Type: String
+    NoEcho: true
+    MinLength: 8
+    MaxLength: 41
+    AllowedPattern: '[a-zA-Z0-9]*'
+
+Resources:
+  # DB Subnet Group (required for RDS in VPC)
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupName: !Sub ${EnvironmentName}-db-subnet-group
+      DBSubnetGroupDescription: Subnet group for RDS
+      SubnetIds:
+        - Fn::ImportValue: !Sub ${EnvironmentName}-PublicSubnet1Id
+        - Fn::ImportValue: !Sub ${EnvironmentName}-PublicSubnet2Id
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-db-subnet-group
+
+  # RDS MySQL Instance (FREE TIER - db.t2.micro, 20GB storage)
+  Database:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Delete
+    Properties:
+      DBInstanceIdentifier: !Sub ${EnvironmentName}-mysql
+      DBName: !Ref DBName
+      Engine: mysql
+      EngineVersion: '8.0.35'
+      DBInstanceClass: db.t2.micro  # FREE TIER eligible
+      AllocatedStorage: 20  # FREE TIER: 20GB
+      StorageType: gp2
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      VPCSecurityGroups:
+        - Fn::ImportValue: !Sub ${EnvironmentName}-RDSSecurityGroupId
+      PubliclyAccessible: false
+      BackupRetentionPeriod: 7  # FREE TIER: automated backups
+      PreferredBackupWindow: '03:00-04:00'
+      PreferredMaintenanceWindow: 'sun:04:00-sun:05:00'
+      MultiAZ: false  # FREE TIER: single AZ only
+      StorageEncrypted: false  # Keep costs at zero
+      EnableCloudwatchLogsExports:
+        - error
+        - general
+        - slowquery
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-mysql
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+Outputs:
+  DatabaseEndpoint:
+    Description: Database endpoint address
+    Value: !GetAtt Database.Endpoint.Address
+    Export:
+      Name: !Sub ${EnvironmentName}-DatabaseEndpoint
+
+  DatabasePort:
+    Description: Database port
+    Value: !GetAtt Database.Endpoint.Port
+    Export:
+      Name: !Sub ${EnvironmentName}-DatabasePort
+
+  DatabaseName:
+    Description: Database name
+    Value: !Ref DBName
+    Export:
+      Name: !Sub ${EnvironmentName}-DatabaseName

@@ -1,0 +1,111 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'E-Commerce Platform - Root Stack (100% FREE TIER)'
+
+Parameters:
+  EnvironmentName:
+    Description: Environment name prefix
+    Type: String
+    Default: ecommerce
+    AllowedPattern: '[a-z0-9-]+'
+
+  KeyPairName:
+    Description: EC2 Key Pair name for SSH access (must exist in your AWS account)
+    Type: AWS::EC2::KeyPair::KeyName
+
+  DBPassword:
+    Description: Database master password (min 8 characters)
+    Type: String
+    NoEcho: true
+    MinLength: 8
+    MaxLength: 41
+    AllowedPattern: '[a-zA-Z0-9]*'
+    ConstraintDescription: Must contain only alphanumeric characters
+
+Resources:
+  # Note: For local deployments, use AWS CLI with --template-body parameter
+  # For production, upload templates to S3 first and use --template-url
+
+  # Network Stack (VPC, Subnets, Security Groups)
+  NetworkStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: network.yaml
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-network-stack
+
+  # Database Stack (RDS MySQL FREE TIER)
+  DatabaseStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: NetworkStack
+    Properties:
+      TemplateURL: database.yaml
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+        DBName: ecommerce_db
+        DBUsername: ecommerce_user
+        DBPassword: !Ref DBPassword
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-database-stack
+
+  # Compute Stack (EC2 FREE TIER)
+  ComputeStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: NetworkStack
+    Properties:
+      TemplateURL: compute.yaml
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+        KeyPairName: !Ref KeyPairName
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-compute-stack
+
+  # S3 Bucket for CloudFormation templates (optional, for production deployments)
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    Properties:
+      BucketName: !Sub ${EnvironmentName}-cfn-templates-${AWS::AccountId}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-cfn-templates
+
+Outputs:
+  VPCId:
+    Description: VPC ID
+    Value: !GetAtt NetworkStack.Outputs.VPCId
+
+  DatabaseEndpoint:
+    Description: RDS MySQL endpoint
+    Value: !GetAtt DatabaseStack.Outputs.DatabaseEndpoint
+
+  EC2PublicIP:
+    Description: EC2 instance public IP
+    Value: !GetAtt ComputeStack.Outputs.PublicIP
+
+  SSHCommand:
+    Description: SSH command to connect to EC2 instance
+    Value: !GetAtt ComputeStack.Outputs.SSHCommand
+
+  ApplicationURL:
+    Description: Application URL (after deployment)
+    Value: !Sub 'http://${ComputeStack.Outputs.PublicIP}'
+
+  MailHogURL:
+    Description: MailHog web interface URL (after deployment)
+    Value: !Sub 'http://${ComputeStack.Outputs.PublicIP}:8025'
+
+  S3BucketName:
+    Description: S3 bucket for CloudFormation templates
+    Value: !Ref S3Bucket
