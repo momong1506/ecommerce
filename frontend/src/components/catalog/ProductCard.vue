@@ -1,7 +1,11 @@
 <template>
   <div class="product-card">
     <div class="product-image">
-      <img :src="product.image" :alt="product.name" />
+      <img
+        :src="productImage"
+        :alt="product.name"
+        @error="handleImageError"
+      />
       <div v-if="!product.is_available" class="out-of-stock-badge">
         Out of Stock
       </div>
@@ -25,7 +29,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 const props = defineProps({
@@ -36,6 +40,23 @@ const props = defineProps({
 })
 
 const router = useRouter()
+const imageError = ref(false)
+
+// Inline SVG placeholder as data URI - always works, no external dependency
+const PLACEHOLDER_IMAGE = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect width='400' height='300' fill='%2342b883'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial, sans-serif' font-size='24' fill='white'%3E${encodeURIComponent(props.product.name || 'Product Image')}%3C/text%3E%3C/svg%3E`
+
+const productImage = computed(() => {
+  if (imageError.value) return PLACEHOLDER_IMAGE
+  if (!props.product.image || props.product.image === '') return PLACEHOLDER_IMAGE
+  return props.product.image
+})
+
+const handleImageError = (event) => {
+  // If the placeholder also fails, use inline SVG
+  if (!imageError.value) {
+    imageError.value = true
+  }
+}
 
 const truncatedDescription = computed(() => {
   if (!props.product.description) return ''
@@ -78,12 +99,22 @@ const viewDetails = () => {
   height: 200px;
   overflow: hidden;
   background-color: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .product-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  background-color: #f5f5f5;
+  transition: opacity 0.3s;
+}
+
+.product-image img[src*="data:image"] {
+  object-fit: contain;
+  padding: 1rem;
 }
 
 .out-of-stock-badge {

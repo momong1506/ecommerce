@@ -69,8 +69,10 @@
 
 <script setup>
 import { useCart } from '../../composables/useCart'
+import { useToast } from '../../composables/useToast'
 
 const { cart, cartTotal, updateQuantity, removeFromCart } = useCart()
+const { info } = useToast()
 
 const increaseQuantity = (productId) => {
   const item = cart.value.find(i => i.product.id === productId)
@@ -87,8 +89,10 @@ const decreaseQuantity = (productId) => {
 }
 
 const removeItem = (productId) => {
-  if (confirm('Are you sure you want to remove this item?')) {
+  const item = cart.value.find(i => i.product.id === productId)
+  if (item) {
     removeFromCart(productId)
+    info(`${item.product.name} removed from cart`)
   }
 }
 </script>
@@ -180,27 +184,37 @@ const removeItem = (productId) => {
 }
 
 .qty-btn {
-  width: 30px;
-  height: 30px;
-  border: 1px solid #ddd;
+  width: 32px;
+  height: 32px;
+  border: 2px solid #42b883;
   background: white;
-  border-radius: 4px;
+  color: #42b883;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 1.2rem;
+  font-size: 1.3rem;
+  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
+  line-height: 1;
 }
 
 .qty-btn:hover:not(:disabled) {
-  background-color: #f5f5f5;
-  border-color: #42b883;
+  background-color: #42b883;
+  color: white;
+  transform: scale(1.05);
+}
+
+.qty-btn:active:not(:disabled) {
+  transform: scale(0.95);
 }
 
 .qty-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.3;
   cursor: not-allowed;
+  border-color: #ccc;
+  color: #ccc;
 }
 
 .qty-display {
@@ -217,20 +231,30 @@ const removeItem = (productId) => {
 }
 
 .remove-btn {
-  width: 30px;
-  height: 30px;
-  border: none;
-  background: #e74c3c;
-  color: white;
-  border-radius: 4px;
+  width: 32px;
+  height: 32px;
+  border: 2px solid #e74c3c;
+  background: white;
+  color: #e74c3c;
+  border-radius: 6px;
   cursor: pointer;
   font-size: 1.5rem;
+  font-weight: 700;
   line-height: 1;
-  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
 }
 
 .remove-btn:hover {
-  background-color: #c0392b;
+  background-color: #e74c3c;
+  color: white;
+  transform: scale(1.05);
+}
+
+.remove-btn:active {
+  transform: scale(0.95);
 }
 
 .order-totals {

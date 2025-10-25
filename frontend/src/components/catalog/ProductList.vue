@@ -10,7 +10,17 @@
     </div>
 
     <div v-else-if="products.length === 0" class="empty">
-      <p>No products available at the moment.</p>
+      <div class="empty-icon">🛍️</div>
+      <h2 class="empty-title">No Products Available</h2>
+      <p class="empty-message">Our catalog is currently empty. Please check back later!</p>
+      <div class="empty-dev-hint">
+        <details>
+          <summary>Developer Note</summary>
+          <p>To populate sample products, run:</p>
+          <code>docker-compose exec backend php artisan db:seed --class=ProductSeeder</code>
+        </details>
+      </div>
+      <button @click="fetchProducts" class="refresh-btn">Refresh Catalog</button>
     </div>
 
     <div v-else class="product-grid">
@@ -70,20 +80,99 @@ onMounted(() => {
   color: #e74c3c;
 }
 
-.retry-btn {
+.empty {
+  background: white;
+  border-radius: 12px;
+  padding: 4rem 2rem;
+  margin: 2rem auto;
+  max-width: 600px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.empty-icon {
+  font-size: 5rem;
+  margin-bottom: 1rem;
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.empty-title {
+  margin: 0 0 1rem 0;
+  font-size: 1.8rem;
+  color: #2c3e50;
+}
+
+.empty-message {
+  margin: 0 0 2rem 0;
+  font-size: 1.1rem;
+  color: #666;
+}
+
+.empty-dev-hint {
+  margin: 2rem 0;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #42b883;
+}
+
+.empty-dev-hint details {
+  text-align: left;
+}
+
+.empty-dev-hint summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: #42b883;
+  margin-bottom: 0.5rem;
+}
+
+.empty-dev-hint p {
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.empty-dev-hint code {
+  display: block;
+  padding: 0.75rem;
+  background-color: #2c3e50;
+  color: #42b883;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.retry-btn,
+.refresh-btn {
   margin-top: 1rem;
-  padding: 0.5rem 1.5rem;
+  padding: 0.75rem 1.5rem;
   background-color: #42b883;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
 }
 
-.retry-btn:hover {
+.retry-btn:hover,
+.refresh-btn:hover {
   background-color: #359268;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(66, 184, 131, 0.3);
 }
 
 .product-grid {

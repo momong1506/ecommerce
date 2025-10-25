@@ -63,10 +63,12 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { catalogService } from '../../services/catalogService'
 import { useCart } from '../../composables/useCart'
+import { useToast } from '../../composables/useToast'
 
 const route = useRoute()
 const router = useRouter()
 const { addToCart } = useCart()
+const { success } = useToast()
 
 const product = ref(null)
 const loading = ref(false)
@@ -107,7 +109,7 @@ const fetchProduct = async () => {
 
 const addToCartHandler = () => {
   addToCart(product.value, 1)
-  alert(`"${product.value.name}" has been added to cart!`)
+  success(`${product.value.name} has been added to cart!`)
   // Optionally redirect to checkout
   // router.push('/checkout')
 }

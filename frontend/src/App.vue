@@ -24,12 +24,16 @@
         <p>&copy; 2025 {{ appName }}. All rights reserved.</p>
       </div>
     </footer>
+
+    <!-- Global Toast Notifications -->
+    <ToastNotification />
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
 import { useCart } from './composables/useCart'
+import ToastNotification from './components/common/ToastNotification.vue'
 
 const appName = ref(import.meta.env.VITE_APP_NAME || 'E-Commerce Platform')
 const { cartItemCount } = useCart()
